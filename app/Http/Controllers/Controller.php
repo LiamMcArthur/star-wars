@@ -20,48 +20,48 @@ class Controller extends BaseController
 
     public function defendBlueprints()
     {
-        // TODO Stop using random order. Try go forward first and only use left/ right if forward fails.
-        $status = $this->status;
-        $path = $this->path->implode('');
+        while ($this->status !== 417) {
 
-        while ($status !== 200) {
-            $forwards = $this->navigateDroid($path . 'f');
-            if ($forwards !== 410) {
-                break;
+            if ($this->path->count() > 0) {
+                $initialPath = $this->path->implode('');
+            } else {
+                $initialPath = 'f';
             }
-        }
 
-        while ($status !== 200) {
-            $forwards = $this->navigateDroid($path . 'l');
-            if ($forwards !== 410) {
-                break;
-            }
-        }
+            $status = $this->navigateDroid($initialPath);
 
-        while ($status !== 200) {
-            $forwards = $this->navigateDroid($path . 'r');
-            if ($forwards !== 410) {
-                break;
+            $path = $this->path->implode('');
+
+            if ($status !== 410) {
+
+                $left = $this->navigateDroid($path . 'l');
+
+                if ($left !== 410) {
+
+                    $right = $this->navigateDroid($path . 'f');
+
+                    if ($right !== 410) {
+
+                        $this->navigateDroid($path . 'f');
+
+                    }
+
+                }
+
             }
+
+            $this->navigateDroid('f');
+
         }
 
     }
 
     private function navigateDroid($direction)
     {
-        if ($this->path->count() > 0) {
-            $path = $this->path->implode('');
-        } else {
-            $path = $direction;
-        }
-
-        dump($path);
-
-
         $curl = curl_init();
         curl_setopt_array($curl, [
             CURLOPT_RETURNTRANSFER => 1,
-            CURLOPT_URL => 'http://deathstar.victoriaplum.com/empire.php?name=mariusz&path=' . $path,
+            CURLOPT_URL => 'http://deathstar.victoriaplum.com/empire.php?name=mariusz&path=' . $direction,
         ]);
 
         curl_exec($curl);
@@ -71,7 +71,7 @@ class Controller extends BaseController
         // GONE - navigating
         if ($statusCode === 410) {
             $this->status = 410;
-            $this->path->push($path . $direction);
+            $this->path->push($direction);
         }
 
         // CRASHED - empty the path and try again
@@ -85,6 +85,8 @@ class Controller extends BaseController
 //            $this->status = 200;
 //            dd("Success", $generatedPath);
         }
+
+        dump($this->path);
 
         return $statusCode;
 
